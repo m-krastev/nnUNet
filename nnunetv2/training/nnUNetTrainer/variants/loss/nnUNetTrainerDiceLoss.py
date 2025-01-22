@@ -39,10 +39,13 @@ class nnUNetTrainerDiceCELoss_noSmooth(nnUNetTrainer):
                                    use_ignore_label=self.label_manager.ignore_label is not None,
                                    dice_class=MemoryEfficientSoftDiceLoss)
         else:
-            loss = DC_and_CE_loss({'batch_dice': self.configuration_manager.batch_dice,
-                                   'smooth': 0, 'do_bg': False, 'ddp': self.is_ddp}, {}, weight_ce=1, weight_dice=1,
-                                  ignore_label=self.label_manager.ignore_label,
-                                  dice_class=MemoryEfficientSoftDiceLoss)
+            # loss = DC_and_CE_loss({'batch_dice': self.configuration_manager.batch_dice,
+            #                        'smooth': 0, 'do_bg': False, 'ddp': self.is_ddp}, {}, weight_ce=1, weight_dice=1,
+            #                       ignore_label=self.label_manager.ignore_label,
+            #                       dice_class=MemoryEfficientSoftDiceLoss)
+            from monai.losses import GeneralizedDiceFocalLoss
+            self.print_to_log_file("Using GeneralizedDiceFocalLoss")
+            loss = GeneralizedDiceFocalLoss(gamma=2, include_background=False)
 
         if self.enable_deep_supervision:
             deep_supervision_scales = self._get_deep_supervision_scales()

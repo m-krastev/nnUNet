@@ -394,9 +394,12 @@ class nnUNetTrainer(object):
                                    use_ignore_label=self.label_manager.ignore_label is not None,
                                    dice_class=MemoryEfficientSoftDiceLoss)
         else:
-            loss = DC_and_CE_loss({'batch_dice': self.configuration_manager.batch_dice,
-                                   'smooth': 1e-5, 'do_bg': False, 'ddp': self.is_ddp}, {}, weight_ce=1, weight_dice=1,
-                                  ignore_label=self.label_manager.ignore_label, dice_class=MemoryEfficientSoftDiceLoss)
+            # loss = DC_and_CE_loss({'batch_dice': self.configuration_manager.batch_dice,
+            #                        'smooth': 1e-5, 'do_bg': False, 'ddp': self.is_ddp}, {}, weight_ce=1, weight_dice=1,
+            #                       ignore_label=self.label_manager.ignore_label, dice_class=MemoryEfficientSoftDiceLoss)
+            from monai.losses import GeneralizedDiceFocalLoss
+            self.print_to_log_file("Using GeneralizedDiceFocalLoss")
+            loss = GeneralizedDiceFocalLoss(gamma=2, include_background=False)
 
         if self._do_i_compile():
             loss.dc = torch.compile(loss.dc)
