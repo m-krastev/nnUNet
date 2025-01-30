@@ -1,4 +1,5 @@
 import torch
+from nnunetv2.training.loss.focal_loss import FocalLoss
 from nnunetv2.training.loss.dice import SoftDiceLoss, MemoryEfficientSoftDiceLoss
 from nnunetv2.training.loss.robust_ce_loss import RobustCrossEntropyLoss, TopKLoss
 from nnunetv2.utilities.helpers import softmax_helper_dim1
@@ -153,4 +154,31 @@ class DC_and_topk_loss(nn.Module):
             if self.weight_ce != 0 and (self.ignore_label is None or num_fg > 0) else 0
 
         result = self.weight_ce * ce_loss + self.weight_dice * dc_loss
+        return result
+
+
+class DC_and_Focal_loss(nn.Module):
+    def __init__(self, soft_dice_kwargs, focal_kwargs):
+        super(DC_and_Focal_loss, self).__init__()
+        self.dc = SoftDiceLoss(apply_nonlin=softmax_helper_dim1, **soft_dice_kwargs)
+        self.focal = FocalLoss(apply_nonlin=softmax_helper_dim1, **focal_kwargs)
+
+    def forward(self, net_output, target):
+        dc_loss = self.dc(net_output, target)
+        focal_loss = self.focal(net_output, target)
+
+        result = dc_loss + focal_loss
+        return result
+
+class DC_and_Focal_loss_efficient(nn.Module):
+    def __init__(self, soft_dice_kwargs, focal_kwargs):
+        super(DC_and_Focal_loss_efficient, self).__init__()
+        self.dc = MemoryEfficientSoftDiceLoss(apply_nonlin=softmax_helper_dim1, **soft_dice_kwargs)
+        self.focal = FocalLoss(apply_nonlin=softmax_helper_dim1, **focal_kwargs)
+
+    def forward(self, net_output, target):
+        dc_loss = self.dc(net_output, target)
+        focal_loss = self.focal(net_output, target)
+
+        result = dc_loss + focal_loss
         return result
